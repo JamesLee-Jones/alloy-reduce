@@ -16,7 +16,9 @@ repositories {
 
 dependencies {
     testImplementation(kotlin("test"))
-    implementation("org.alloytools:org.alloytools.alloy.dist:6.2.0")
+    implementation("org.alloytools:org.alloytools.alloy.dist:6.2.0") {
+        exclude(group = "org.slf4j", module = "slf4j-simple")
+    }
     implementation("org.jetbrains.kotlinx:kotlinx-cli:0.3.6")
 }
 

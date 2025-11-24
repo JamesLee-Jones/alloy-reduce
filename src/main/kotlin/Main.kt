@@ -2,8 +2,12 @@ package org.alloyreduce
 
 import com.sun.tools.javac.tree.TreeInfo.args
 import edu.mit.csail.sdg.alloy4.A4Reporter
+import edu.mit.csail.sdg.alloy4.Err
+import edu.mit.csail.sdg.ast.Module
 import edu.mit.csail.sdg.parser.CompModule
 import edu.mit.csail.sdg.parser.CompUtil
+import edu.mit.csail.sdg.translator.A4Options
+import edu.mit.csail.sdg.translator.TranslateAlloyToKodkod
 import kotlinx.cli.ArgParser
 import kotlinx.cli.ArgType
 import kotlinx.cli.required
@@ -25,15 +29,37 @@ fun reducePreds(
 
 fun loadPredicateWithModel(
     predPath: String,
+    cache: MutableMap<String, String>,
     rep: A4Reporter,
 ): CompModule {
-    val module = CompUtil.parseEverything_fromFile(rep, null, predPath)
+    val module = CompUtil.parseEverything_fromFile(rep, cache, predPath)
     return module
 }
 
 fun predOrigPath(predPath: String): String {
     val path = Path(predPath)
     return "${path.nameWithoutExtension}.orig.${path.extension}"
+}
+
+fun checkUnsat(
+    runModule: CompModule,
+    modelModule: CompModule,
+    rep: A4Reporter,
+) {
+    // TODO(JLJ): Options should ultimately be customizable via command line
+    for (command in runModule.allCommands) {
+        println(command.toString())
+        try {
+            val sol = TranslateAlloyToKodkod.execute_command(rep, runModule.allReachableSigs, command, A4Options())
+            if (sol.satisfiable()) {
+                System.err.println("ERROR: command $command is satisfiable")
+                kotlin.system.exitProcess(1)
+            }
+        } catch (err: Err) {
+            println(err.message)
+            kotlin.system.exitProcess(1)
+        }
+    }
 }
 
 fun main(args: Array<String>) {
@@ -45,16 +71,22 @@ fun main(args: Array<String>) {
             fullName = "model",
             description = "The model to use when reducing predicates",
         ).required()
-    val predicatePaths by parser.argument(ArgType.String, description = "The predicates to reduce").vararg()
+    val modulePaths by parser
+        .argument(
+            ArgType.String,
+            description = "Alloy files containing unsatisfiable run commands to be reduced",
+        ).vararg()
 
     parser.parse(args)
 
     val rep = A4Reporter()
-    val modelModule = CompUtil.parseEverything_fromFile(rep, null, modelFileName)
+    val cache = mutableMapOf<String, String>()
+    val modelModule = CompUtil.parseEverything_fromFile(rep, cache, modelFileName)
 
-    for (predicatePath in predicatePaths) {
-        File(predicatePath).copyTo(File(predOrigPath(predicatePath)))
-        val predsModule = loadPredicateWithModel(predicatePath, rep)
+    for (modulePath in modulePaths) {
+        val predsModule = loadPredicateWithModel(modulePath, cache, rep)
+        checkUnsat(predsModule, modelModule, rep)
+        File(modulePath).copyTo(File(predOrigPath(modulePath)))
         reducePreds(predsModule, modelModule)
     }
 }
