@@ -16,6 +16,7 @@ repositories {
 
 dependencies {
     testImplementation(kotlin("test"))
+    implementation("org.alloytools:org.alloytools.alloy.dist:6.2.0")
     implementation("org.jetbrains.kotlinx:kotlinx-cli:0.3.6")
 }
 
