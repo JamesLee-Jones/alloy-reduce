@@ -16,10 +16,7 @@ import kotlin.io.path.createTempDirectory
 import kotlin.io.path.extension
 import kotlin.io.path.nameWithoutExtension
 
-fun reducePreds(
-    predsModule: CompModule,
-    model: CompModule,
-) {
+fun reduceCommands(predsModule: CompModule) {
     val tempDir = createTempDirectory()
 }
 
@@ -39,7 +36,6 @@ fun predOrigPath(predPath: String): String {
 
 fun checkUnsat(
     runModule: CompModule,
-    modelModule: CompModule,
     rep: A4Reporter,
 ) {
     // TODO(JLJ): Options should ultimately be customizable via command line
@@ -61,12 +57,6 @@ fun checkUnsat(
 fun main(args: Array<String>) {
     val parser = ArgParser("alloy-reduce")
 
-    val modelFileName by parser
-        .option(
-            ArgType.String,
-            fullName = "model",
-            description = "The model to use when reducing predicates",
-        ).required()
     val modulePaths by parser
         .argument(
             ArgType.String,
@@ -77,12 +67,11 @@ fun main(args: Array<String>) {
 
     val rep = A4Reporter()
     val cache = mutableMapOf<String, String>()
-    val modelModule = CompUtil.parseEverything_fromFile(rep, cache, modelFileName)
 
     for (modulePath in modulePaths) {
         val predsModule = loadPredicateWithModel(modulePath, cache, rep)
-        checkUnsat(predsModule, modelModule, rep)
+        checkUnsat(predsModule, rep)
         File(modulePath).copyTo(File(predOrigPath(modulePath)))
-        reducePreds(predsModule, modelModule)
+        reduceCommands(predsModule)
     }
 }
