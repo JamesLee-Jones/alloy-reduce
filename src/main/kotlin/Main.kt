@@ -1,9 +1,7 @@
 package org.alloyreduce
 
-import com.sun.tools.javac.tree.TreeInfo.args
 import edu.mit.csail.sdg.alloy4.A4Reporter
 import edu.mit.csail.sdg.alloy4.Err
-import edu.mit.csail.sdg.ast.Module
 import edu.mit.csail.sdg.parser.CompModule
 import edu.mit.csail.sdg.parser.CompUtil
 import edu.mit.csail.sdg.translator.A4Options
@@ -16,8 +14,6 @@ import java.io.File
 import kotlin.io.path.Path
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.extension
-import kotlin.io.path.fileVisitor
-import kotlin.io.path.name
 import kotlin.io.path.nameWithoutExtension
 
 fun reducePreds(
